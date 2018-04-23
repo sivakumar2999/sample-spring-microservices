@@ -1,5 +1,6 @@
 package pl.piomin.microservices.customer.api;
 
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -13,6 +14,7 @@ import pl.piomin.microservices.customer.intercomm.AccountClient;
 import pl.piomin.microservices.customer.model.Account;
 import pl.piomin.microservices.customer.model.Customer;
 import pl.piomin.microservices.customer.model.CustomerType;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 
 @RestController
 public class Api {
@@ -44,6 +46,10 @@ public class Api {
 		return customers;
 	}
 	
+	 @HystrixCommand(fallbackMethod = "fallback", groupKey = "Hello",
+	            commandKey = "hello",
+	            threadPoolKey = "helloThread"
+	            )
 	@RequestMapping("/customers/{id}")
 	public Customer findById(@PathVariable("id") Integer id) {
 		logger.info(String.format("Customer.findById(%s)", id));
@@ -52,5 +58,11 @@ public class Api {
 		customer.setAccounts(accounts);
 		return customer;
 	}
+	 
+	 public Customer fallback(@PathVariable("id") Integer id,Throwable hystrixCommand) {
+		 
+		 Customer customer = customers.stream().filter(it -> it.getId().intValue()==id.intValue()).findFirst().get();
+		 return customer;
+	    }
 	
 }
